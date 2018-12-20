@@ -16,10 +16,13 @@ import java.util.Random;
 public class MapManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MapManager.class);
+    public static final int SIZE = 1201;
     private final Random random;
 
     //private List<byte[]> wololo;
     private byte[] bidoof;
+    private byte[] result;
+
 
     public MapManager() throws GeneralSecurityException, IOException {
         /*
@@ -35,6 +38,17 @@ public class MapManager {
         wololo.add(bl);
         */
 
+        byte[] res = new byte[SIZE * SIZE];
+        for(int x = 0; x < SIZE; ++x){
+            for(int y = 0; y < SIZE; ++y){
+                res[x + y * SIZE] = (byte)((x + y) * 255 / 2040);
+            }
+        }
+
+        FileOutputStream fos = new FileOutputStream(new File("res.txt"));
+        fos.write(res);
+        result = res;
+
         bidoof = new FileInputStream(new File("Bidoof.png")).readAllBytes();
         random = new Random();
     }
@@ -45,26 +59,30 @@ public class MapManager {
     public Response doStuff(@PathParam("x") int x, @PathParam("y") int y, @PathParam("z") int z) throws IOException {
         //int ind = (x + y) % 4;
         ByteArrayOutputStream bais = new ByteArrayOutputStream();
-        byte[] result = new byte[1201*1201] ;
-        for (int i = 0; i < 1201*1201; ++i){
-            result[i] = (byte) random.nextInt();
-        }
+
         ImageIO.write(colorizeMap(result), "png", bais);
         bais.flush();
+        Response build = Response.ok(bais.toByteArray()).build();
         bais.close();
-        return Response.ok(bais.toByteArray()).build();
+        return build;
     }
 
-
-    static int size = 1201;
     private BufferedImage colorizeMap(byte[] data){
-        BufferedImage bi = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+        BufferedImage bi = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_RGB);
+
+        for(int x = 0; x < SIZE; ++x){
+            for(int y = 0; y < SIZE; ++y){
+                int b = Byte.toUnsignedInt(data[x + y * SIZE]);
+                float hue = b / 360.0f;
+                bi.setRGB(x, y, Color.HSBtoRGB(hue, 1.0f, 1.0f));
+            }
+        }
 
         for (int i = 0; i < data.length; ++i){
-            int x = i % size;
-            int y = i / size;
-            int b = data[i];
-            bi.setRGB(x, y, Color.HSBtoRGB((float)(b % 240 / 360), 1, 1));
+            int x = i % SIZE;
+            int y = i / SIZE;
+            int b = Byte.toUnsignedInt(data[i]);
+            bi.setRGB(x, y, Color.HSBtoRGB((((float) b) / 360.0f) , 1, 1));
         }
 
         return bi;
