@@ -15,13 +15,15 @@
 </head>
 <body>
 
-<div id="mapid" style="width: 600px; height: 400px;"></div>
+<div id="mapid" style="width: 1200px; height: 800px;"></div>
 <script>
 
     var mymap = L.map('mapid').setView([51.505, -0.09], 13);
 
     L.tileLayer('./comfy/map/{z}/{x}/{y}', {
+        minZoom: 16,
         maxZoom: 18,
+        tileSize: 256,
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
             '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
             'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
