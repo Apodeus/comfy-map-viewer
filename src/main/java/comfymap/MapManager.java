@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.zip.DataFormatException;
 
 @Path("/map")
 @Singleton
@@ -23,11 +24,11 @@ public class MapManager {
     private final byte[] br; // bottom right
     private final byte[] ur; // up right
 
-    public MapManager() throws IOException {
-        ul = getFileAsByte(new FileInputStream(new File("N44W002.dio")).readAllBytes());
-        ur = getFileAsByte(new FileInputStream(new File("N44W001.dio")).readAllBytes());
-        br = getFileAsByte(new FileInputStream(new File("N43W001.dio")).readAllBytes());
-        bl = getFileAsByte(new FileInputStream(new File("N43W002.dio")).readAllBytes());
+    public MapManager() throws IOException, DataFormatException {
+        ul = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes()));
+        ur = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes()));
+        br = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N43W001.dio")).readAllBytes()));
+        bl = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N43W002.dio")).readAllBytes()));
     }
 
     private byte[] generateTest() {
