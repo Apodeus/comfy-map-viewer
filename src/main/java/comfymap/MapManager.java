@@ -25,10 +25,10 @@ public class MapManager {
     private final byte[] ur; // up right
 
     public MapManager() throws IOException, DataFormatException {
-        ul = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes()));
-        ur = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes()));
-        br = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N43W001.dio")).readAllBytes()));
-        bl = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N43W002.dio")).readAllBytes()));
+        ul = CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes());
+        ur = CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes());
+        br = CompressionUtil.decompress(new FileInputStream(new File("N43W001.dio")).readAllBytes());
+        bl = CompressionUtil.decompress(new FileInputStream(new File("N43W002.dio")).readAllBytes());
     }
 
     private byte[] generateTest() {
