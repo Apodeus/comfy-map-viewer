@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.zip.DataFormatException;
 
 @Path("/map")
@@ -23,8 +24,18 @@ public class MapManager {
     private final byte[] ul; // up left
     private final byte[] br; // bottom right
     private final byte[] ur; // up right
+    private final HBaseDAO hBaseDAO;
+
+    private final byte[] defaultTile;
 
     public MapManager() throws IOException, DataFormatException {
+        this.hBaseDAO = new HBaseDAO();
+
+        byte[] tmp = new byte[2 * TILE_SIZE * TILE_SIZE];
+        Arrays.fill(tmp, (byte)0);
+
+        defaultTile = getFileAsByte(tmp);
+
         ul = CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes());
         ur = CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes());
         br = CompressionUtil.decompress(new FileInputStream(new File("N43W001.dio")).readAllBytes());
@@ -61,6 +72,19 @@ public class MapManager {
                 result = br;
             }
         }
+
+        byte[] resHBase = hBaseDAO.getCompressedTile(x, y, 0);
+        if(resHBase.length == 0){
+            result = defaultTile;
+        } else {
+            try {
+                result = getFileAsByte(CompressionUtil.decompress(resHBase));
+            } catch (DataFormatException e) {
+                LOGGER.info(e.getMessage());
+                result = defaultTile;
+            }
+        }
+
         return Response.ok(result).build();
     }
 
