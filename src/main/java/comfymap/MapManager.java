@@ -32,7 +32,9 @@ public class MapManager {
         this.hBaseDAO = new HBaseDAO();
 
         byte[] tmp = new byte[2 * TILE_SIZE * TILE_SIZE];
-        Arrays.fill(tmp, (byte)0);
+        for(int i = 0; i < 2*TILE_SIZE*TILE_SIZE;++i){
+            tmp[i] = 0;
+        }
 
         defaultTile = getFileAsByte(tmp);
 
@@ -73,7 +75,7 @@ public class MapManager {
             }
         }
 
-        byte[] resHBase = hBaseDAO.getCompressedTile(x, y, 0);
+        byte[] resHBase = hBaseDAO.getCompressedTile(70, 45, 0);
         if(resHBase.length == 0){
             result = defaultTile;
         } else {
