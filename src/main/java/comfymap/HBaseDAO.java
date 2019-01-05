@@ -18,13 +18,16 @@ public class HBaseDAO {
 
     private Connection connection;
 
-    public byte[] getCompressedTile(int x, int y, int z) throws IOException {
+    public HBaseDAO() throws IOException {
         Configuration conf = HBaseConfiguration.create();
         conf.addResource("hbase-site.xml");
         conf.addResource("hdfs-site.xml");
         conf.addResource("core-site.xml");
 
-        Connection connection = ConnectionFactory.createConnection(conf);
+        connection = ConnectionFactory.createConnection(conf);
+    }
+
+    public byte[] getCompressedTile(int x, int y, int z) throws IOException {
         String key = x + "-" + y + "-" + z;
 
         Table t = connection.getTable(TableName.valueOf(TABLE_NAME));
