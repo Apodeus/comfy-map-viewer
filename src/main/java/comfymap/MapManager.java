@@ -1,5 +1,7 @@
 package comfymap;
 
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +25,19 @@ public class MapManager {
     private final byte[] ul; // up left
     private final byte[] br; // bottom right
     private final byte[] ur; // up right
+    private final byte[] defaultTile;
 
-    public MapManager() throws IOException, DataFormatException {
+    private final HBaseDAO hBaseDAO;
+
+    public MapManager() throws Exception {
+        hBaseDAO = new HBaseDAO();
+
+        byte[] tmp = new byte[2 * TILE_SIZE * TILE_SIZE];
+        for(int i = 0; i < 2 * (TILE_SIZE * TILE_SIZE); ++i){
+            tmp[i] = 0;
+        }
+
+        defaultTile = getFileAsByte(tmp);
         ul = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes()));
         ur = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes()));
         br = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("N43W001.dio")).readAllBytes()));
@@ -59,6 +72,17 @@ public class MapManager {
                 result = ur;
             } else {
                 result = br;
+            }
+        }
+        byte[] resHBase = hBaseDAO.getCompressedTile(x, y, 0);
+        if(resHBase.length == 0){
+            result = defaultTile;
+        } else {
+            try {
+                result = getFileAsByte(CompressionUtil.decompress(resHBase));
+            } catch (DataFormatException e) {
+                LOGGER.info(e.getMessage());
+                result = defaultTile;
             }
         }
         return Response.ok(result).build();
