@@ -36,7 +36,7 @@ public class MapManager {
             tmp[i] = 0;
         }
 
-        defaultTile = getFileAsByte(tmp);
+        defaultTile = tmp;
 
         ul = CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes());
         ur = CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes());
@@ -75,12 +75,12 @@ public class MapManager {
             }
         }
 
-        byte[] resHBase = hBaseDAO.getCompressedTile(70, 45, 0);
+        byte[] resHBase = hBaseDAO.getCompressedTile(x, y, 0);
         if(resHBase.length == 0){
             result = defaultTile;
         } else {
             try {
-                result = getFileAsByte(CompressionUtil.decompress(resHBase));
+                result = CompressionUtil.decompress(resHBase);
             } catch (DataFormatException e) {
                 LOGGER.info(e.getMessage());
                 result = defaultTile;

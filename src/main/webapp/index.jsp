@@ -52,7 +52,8 @@
     }
 
     let map = L.map('mapid', {
-        center: [180, 40],
+        center: [0, 0],
+
         zoom: 11,
         maxzoom: 11,
     });
@@ -162,6 +163,7 @@
     map.addLayer(L.gridLayer.heightMap());
     map.addLayer(L.gridLayer.gridBorders());
     map.addLayer(L.gridLayer.gridCoords());
+    map.setView([81.27,-32.5], 11);
 </script>
 </body>
 </html>

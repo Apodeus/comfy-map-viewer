@@ -9,24 +9,30 @@ function genericRender(style, height){
     let topCap = beachlevelCap;
     
     let currentStyle = style.water;
-
-    if (height > waterlevelCap && height < beachlevelCap){
+    if (0 > height){
+        return {
+            hue: 0,
+            sat: 1,
+            val: 1
+        }
+    }
+    if (height > waterlevelCap && height <= beachlevelCap){
         lowCap = waterlevelCap;
         topCap = beachlevelCap;
         currentStyle = style.beach;
-    } else if (height > beachlevelCap && height < plainlevelCap) {
+    } else if (height > beachlevelCap && height <= plainlevelCap) {
         lowCap = beachlevelCap;
         topCap = plainlevelCap;
         currentStyle = style.plain;
-    } else if (height > plainlevelCap && height < mountainlevelCap) {
+    } else if (height > plainlevelCap && height <= mountainlevelCap) {
         lowCap = plainlevelCap;
         topCap = mountainlevelCap;
         currentStyle = style.mountain;
-    }else if (height > mountainlevelCap && height < highmountainlevelCap){
+    }else if (height > mountainlevelCap && height <= highmountainlevelCap){
         lowCap = mountainlevelCap;
         topCap = highmountainlevelCap;
         currentStyle = style.highMountain;
-    }else if (height > highmountainlevelCap && height < snowmountainlevelCap) {
+    }else if (height > highmountainlevelCap && height <= snowmountainlevelCap) {
         lowCap = highmountainlevelCap;
         topCap = snowmountainlevelCap;
         currentStyle = style.snow;
