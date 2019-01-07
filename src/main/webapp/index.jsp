@@ -52,8 +52,9 @@
     }
 
     let map = L.map('mapid', {
-        center: [0, 0],
-        zoom: 0
+        center: [180, 40],
+        zoom: 11,
+        maxzoom: 11,
     });
 
     L.GridLayer.HeightMap = L.GridLayer.extend({
