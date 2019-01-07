@@ -33,7 +33,7 @@
                 let b = g + 1;
                 let a = b + 1;
                 let v = uu[y * size + x];
-                let rrr = genericRender(renderMegadrive, v);
+                let rrr = genericRender(classicRendering, v);
                 let c = HSVtoRGB(rrr.hue, rrr.sat, rrr.val);
                 imgData.data[r] = c.r;
                 imgData.data[g] = c.g;
