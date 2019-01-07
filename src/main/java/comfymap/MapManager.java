@@ -1,7 +1,5 @@
 package comfymap;
 
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +72,7 @@ public class MapManager {
                 result = br;
             }
         }
+
         byte[] resHBase = hBaseDAO.getCompressedTile(x, y, 0);
         if(resHBase.length == 0){
             result = defaultTile;

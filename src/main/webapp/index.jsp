@@ -21,9 +21,9 @@
     var mymap = L.map('mapid').setView([51.505, -0.09], 13);
 
     L.tileLayer('./comfy/map/{z}/{x}/{y}', {
-        minZoom: 16,
-        maxZoom: 18,
-        tileSize: 256,
+        minZoom: 9,
+        maxZoom: 9,
+        tileSize: 32,
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
             '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
             'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
