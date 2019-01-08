@@ -20,24 +20,27 @@
 <script>
 
     function render(canvas, data) {
-        let uu = readBytes(data);
+        let heightMap = readBytes(data);
         let ctx = canvas.getContext('2d');
+        let width = 1200;
+        let height = 1200;
+        let actualWidth = 1201;
         let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        let img = imgData.data;
-        let size = Math.sqrt(data.length / 2);
-        for (let y = 0; y < size - 1; ++y)
-            for (let x = 0; x < size - 1; ++x) {
+        let Id = height2normal(heightMap, width, height);
+        for (let y = 0; y < height; ++y)
+            for (let x = 0; x < width; ++x) {
                 // let r = y * 4 + x * 1201 * 4; // <-- if the canvas is not well rotated
                 let r = y * canvas.getAttribute('width') * 4 + x * 4;
                 let g = r + 1;
                 let b = g + 1;
                 let a = b + 1;
-                let v = uu[y * size + x];
-                let rrr = genericRender(classicRendering, v);
-                let c = HSVtoRGB(rrr.hue, rrr.sat, rrr.val);
-                imgData.data[r] = c.r;
-                imgData.data[g] = c.g;
-                imgData.data[b] = c.b;
+                let height = heightMap[y * actualWidth + x];
+                let colorAsHSV = genericRender(classicRendering, height);
+                let colorAsRGB = HSVtoRGB(colorAsHSV.hue, colorAsHSV.sat, colorAsHSV.val);
+                let diffuseIntensity = Id[y * width + x];
+                imgData.data[r] = colorAsRGB.r * diffuseIntensity;
+                imgData.data[g] = colorAsRGB.g * diffuseIntensity;
+                imgData.data[b] = colorAsRGB.b * diffuseIntensity;
                 imgData.data[a] = 255;
             }
 
@@ -60,14 +63,12 @@
 
     L.GridLayer.HeightMap = L.GridLayer.extend({
         createTile: function (coords) {
-            console.log(coords);
             let tile = document.createElement('canvas');
-            this.options.tileSize = 1201;
+            this.options.tileSize = 1200;
             let tileSize = this.getTileSize();
             tile.setAttribute('width', tileSize.x);
             tile.setAttribute('height', tileSize.y);
             let f = renderPart(tile);
-            console.log("hello");
             let r = getRequest(
                 './comfy/map/'
                 + coords.z + '/'
@@ -87,7 +88,6 @@
 
     L.GridLayer.GridBorders = L.GridLayer.extend({
         createTile: function (coords) {
-            console.log("hello");
             let tile = document.createElement('canvas');
             this.options.tileSize = 1200;
             let tileSize = this.getTileSize();
