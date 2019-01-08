@@ -14,6 +14,7 @@
     <!-- Custom local libs -->
     <script src="lib.js"></script>
     <script src="rendering.js"></script>
+    <script src="https://unpkg.com/mathjs@5.4.0/dist/math.min.js"></script>
 </head>
 <body>
 <div id="mapid" style="width: 1600px; height: 900px;"></div>
