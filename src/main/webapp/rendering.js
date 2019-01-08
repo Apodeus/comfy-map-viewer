@@ -4,7 +4,7 @@ function genericRender(style, height) {
     const plainlevelCap = 450;
     const mountainlevelCap = 1500;
     const highmountainlevelCap = 2000;
-    const snowmountainlevelCap = 8500;
+    const snowmountainlevelCap = 8900;
     let lowCap = waterlevelCap;
     let topCap = beachlevelCap;
 
@@ -133,7 +133,21 @@ function height2normal(heightmap, width, height) {
     return result;
 
 }
+/*
+let genericTruc = [
+    {
+        nom: "water/beach",
+        minLevel: 0,
+        maxLevel: 15,
+        colorMin: renderMegadrive.water,
+        colorMax: renderMegadrive.beach
+    },
+    {
+        nom: "plaine",
+        minLevel: 16,
 
+    }
+]*/
 
 let renderMegadrive = {
     water: {
