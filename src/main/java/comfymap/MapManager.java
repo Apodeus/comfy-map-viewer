@@ -36,7 +36,7 @@ public class MapManager {
             tmp[i] = 0;
         }
 
-        defaultTile = tmp;
+        defaultTile = getFileAsByte(tmp);
 
         ul = CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes());
         ur = CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes());

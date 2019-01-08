@@ -62,7 +62,7 @@
         createTile: function (coords) {
             console.log(coords);
             let tile = document.createElement('canvas');
-            this.options.tileSize = 1200;
+            this.options.tileSize = 1201;
             let tileSize = this.getTileSize();
             tile.setAttribute('width', tileSize.x);
             tile.setAttribute('height', tileSize.y);
@@ -163,7 +163,6 @@
     map.addLayer(L.gridLayer.heightMap());
     map.addLayer(L.gridLayer.gridBorders());
     map.addLayer(L.gridLayer.gridCoords());
-    map.setView([81.27,-32.5], 11);
 </script>
 </body>
 </html>
