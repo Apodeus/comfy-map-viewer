@@ -28,14 +28,13 @@ function readBytes(cbin) {
     //cbin = cbin.split('').map(function (e) { return e.charCodeAt(0);});
     //var inflate = new Zlib.Inflate(cbin);
     //var bin = inflate.decompress();
-    var bin = cbin;
-    var byteArray = [];
-    for (var i = 0; i < bin.length; i += 2) {
-        //var v = bin.charCodeAt(i + 1) + bin.charCodeAt(i);
-        var v = ((bin.charCodeAt(i) & 0xff ) << 8) | (bin.charCodeAt(i + 1) & 0xff);
+    let bin = cbin;
+    let byteArray = [];
+    for (let i = 0; i < bin.length; i += 2) {
+        //let v = bin.charCodeAt(i + 1) + bin.charCodeAt(i);
+        let v = ((bin.charCodeAt(i) & 0xff) << 8) | (bin.charCodeAt(i + 1) & 0xff);
         byteArray.push(v);
     }
-    //console.log(byteArray);
     return byteArray;
 };
 
@@ -49,3 +48,11 @@ function getRequest(url, callback)
     xmlHttp.open("GET", url, true); // true for asynchronous 
     xmlHttp.send(null);
 };
+
+function cross(v1, v2) {
+    return {
+        x: v1.y * v2.z - v1.z * v2.y,
+        y: v1.z * v2.x - v1.x * v2.z,
+        z: v1.x * v2.y - v1.y * v2.x
+    }
+}

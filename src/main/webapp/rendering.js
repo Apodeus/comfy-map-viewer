@@ -55,26 +55,24 @@ function height2normal(heightmap, width, height) {
     for (let y = 0; y < height; ++y) {
         for (let x = 0; x < width; ++x) {
             let index = y * actualSize + x;
-            let x1, x2, y1, y2;
-
+            let s11, s01, s21, s10, s12;
             if (x === 0) {
 
                 // left edge
 
-                x1 = heightmap[index];
-                x2 = heightmap[index + 1];
+                s21 = heightmap[index];
+                s01 = heightmap[index + 1];
 
             } else if (x === (width - 1)) {
 
                 // right edge
 
-                x1 = heightmap[index - 1];
-                x2 = heightmap[index];
+                s21 = heightmap[index - 1];
+                s01 = heightmap[index];
 
             } else {
-
-                x1 = heightmap[index - 1];
-                x2 = heightmap[index + 1];
+                s01 = heightmap[index + 1];
+                s21 = heightmap[index - 1];
 
             }
 
@@ -82,50 +80,37 @@ function height2normal(heightmap, width, height) {
 
                 // top edge
 
-                y1 = heightmap[index];
-                y2 = heightmap[index + actualSize];
+                s12 = heightmap[index];
+                s10 = heightmap[index + actualSize];
 
             } else if (y === height - 1) {
 
                 // bottom edge
 
-                y1 = heightmap[index - actualSize];
-                y2 = heightmap[index];
+                s12 = heightmap[index - actualSize];
+                s10 = heightmap[index];
 
-            } else {
-
-                y1 = heightmap[index - actualSize];
-                y2 = heightmap[index + actualSize];
+            } else{
+                s10 = heightmap[index + actualSize];
+                s12 = heightmap[index - actualSize];
 
             }
 
-//        result.data[(i * 4)] = (x1 - x2) + 127;
-            //      result.data[(i * 4) + 1] = (y1 - y2) + 127;
-            //    result.data[(i * 4) + 2] = 255;
-            //  result.data[(i * 4) + 3] = 255;
+            let nnva = {x: 2, y: 0, z: s21 - s01};
+            let lva = Math.sqrt(nnva.x * nnva.x + nnva.y * nnva.y + nnva.z * nnva.z);
+            let va = {x: nnva.x / lva, y: nnva.y / lva, z: nnva.z / lva };
+            let nnvb = {x: 0, y: 2, z: s12 - s10};
+            let lvb = Math.sqrt(nnvb.x * nnvb.x + nnvb.y * nnvb.y + nnvb.z * nnvb.z);
+            let vb = {x: nnvb.x / lvb, y: nnvb.y / lvb, z: nnvb.z / lvb };
+            let normal = cross(va, vb);
+            let L = {x: -1, y: -1, z: 1};
 
-            let v = {
-                x: ((x1 - x2) + 127),
-                y: ((y1 - y2) + 127),
-                z: 255
-            };
-
-            //let dist = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-            let dist = 255;
-
-            v = {
-                x: v.x / dist,
-                y: v.y / dist,
-                z: v.z / dist
-            };
-
-            let Ia = 0.8;
+            let Ia = 0.9;
             let id = 1;
             let kd = 1;
-            let theta = math.dot([v.x, v.y, v.z], [-1 / 3, -1 / 3, 1 / 3]);
-            let Id = Ia + id * kd * theta;
+            let Id = Ia + id * kd * math.dot([normal.x, normal.y, normal.z], [L.x, L.y, L.z]);
             result[y * width + x] = Id;
-            //result[i] = v;
+            //result[y * width + x] = normal;
         }
     }
 
@@ -203,9 +188,9 @@ let renderMegadrive = {
 let classicRendering = {
     water: {
         hueBase: 204 / 360,
-        hueVariation: 0,
+        hueVariation: -164/360,
         satBase: 0.4,
-        satVariation: 0,
+        satVariation: 0.1,
         valBase: 1,
         valVariation: 0
     },

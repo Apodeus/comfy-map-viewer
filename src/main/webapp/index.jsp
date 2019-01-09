@@ -39,9 +39,9 @@
                 let colorAsHSV = genericRender(classicRendering, height);
                 let colorAsRGB = HSVtoRGB(colorAsHSV.hue, colorAsHSV.sat, colorAsHSV.val);
                 let diffuseIntensity = Id[y * width + x];
-                imgData.data[r] = colorAsRGB.r * diffuseIntensity;
-                imgData.data[g] = colorAsRGB.g * diffuseIntensity;
-                imgData.data[b] = colorAsRGB.b * diffuseIntensity;
+                imgData.data[r] = diffuseIntensity * colorAsRGB.r;
+                imgData.data[g] = diffuseIntensity * colorAsRGB.g;
+                imgData.data[b] = diffuseIntensity * colorAsRGB.b;
                 imgData.data[a] = 255;
             }
 
@@ -58,12 +58,13 @@
     let map = L.map('mapid', {
         center: [0, 0],
 
-        zoom: 11,
-        maxzoom: 11,
+        zoom: 0,
+        maxzoom: 0,
     });
 
     L.GridLayer.HeightMap = L.GridLayer.extend({
         createTile: function (coords) {
+            console.log("call");
             let tile = document.createElement('canvas');
             this.options.tileSize = 1200;
             let tileSize = this.getTileSize();
