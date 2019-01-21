@@ -11,7 +11,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.zip.DataFormatException;
 
 @Path("/map")
@@ -20,39 +19,56 @@ public class MapManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MapManager.class);
     private static final int TILE_SIZE = 1201;
-    private final byte[] bl; // bottom left
-    private final byte[] ul; // up left
-    private final byte[] br; // bottom right
-    private final byte[] ur; // up right
-    private final HBaseDAO hBaseDAO;
+    //private final byte[] tile1;
+    private final byte[] tile2;
+    private byte[] bl; // bottom left
+    private byte[] ul; // up left
+    private byte[] br; // bottom right
+    private byte[] ur; // up right
 
-    private final byte[] defaultTile;
+    private byte[] testTile; // up right
+    private final int[] LUT;
+
+    //private final HBaseDAO hBaseDAO;
 
     public MapManager() throws IOException, DataFormatException {
-        this.hBaseDAO = new HBaseDAO();
+        //this.hBaseDAO = new HBaseDAO();
 
-        byte[] tmp = new byte[2 * TILE_SIZE * TILE_SIZE];
-        for(int i = 0; i < 2*TILE_SIZE*TILE_SIZE;++i){
-            tmp[i] = 0;
-        }
+        //Test normal map ...
+        //byte[] tileExample = CompressionUtil.decompress(new FileInputStream(new File("179040.dio")).readAllBytes());
+        LUT = initLUT();
+        //get normal map
+        //float[] normalMap = getNormalMap("179040.jojo");
+        //float[] normalMap1 = getNormalMap("89019.jojo");
+        //float[] normalMap2 = getNormalMap("89020.jojo");
+        float[] normalMap3 = getNormalMap("266056.jojo");
 
-        defaultTile = getFileAsByte(tmp);
-
-        ul = CompressionUtil.decompress(new FileInputStream(new File("N44W002.dio")).readAllBytes());
-        ur = CompressionUtil.decompress(new FileInputStream(new File("N44W001.dio")).readAllBytes());
-        br = CompressionUtil.decompress(new FileInputStream(new File("N43W001.dio")).readAllBytes());
-        bl = CompressionUtil.decompress(new FileInputStream(new File("N43W002.dio")).readAllBytes());
+        //this.testTile = getFileAsByte(tileExample, normalMap);
+        //this.tile1 = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("89019.dio")).readAllBytes()), normalMap1);
+        //this.tile2 = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("89020.dio")).readAllBytes()), normalMap2);
+        this.tile2 = getFileAsByte(CompressionUtil.decompress(new FileInputStream(new File("266056.dio")).readAllBytes()), normalMap3);
     }
 
-    private byte[] generateTest() {
-        byte[] res = new byte[TILE_SIZE * TILE_SIZE];
-        for(int x = 0; x < TILE_SIZE; ++x){
-            for(int y = 0; y < TILE_SIZE; ++y){
-                int c = ((x + y) * 256) / (2* TILE_SIZE);
-                res[x + y * TILE_SIZE] = (byte) c;
+    private float[] getNormalMap(String file) throws IOException, DataFormatException {
+        float[] normalMap = new float[TILE_SIZE * TILE_SIZE];
+        //byte[] tmpNorm = CompressionUtil.decompress(new FileInputStream(new File(file)).readAllBytes());
+        byte[] tmpNorm = new FileInputStream(new File(file)).readAllBytes();
+        for(int i = 0; i < TILE_SIZE * TILE_SIZE; ++i){
+            ByteBuffer bb = ByteBuffer.allocate(4);
+            for(int j = i * 4; j < i*4 + 4; ++j){
+                bb.put(tmpNorm[j]);
             }
+            normalMap[i] = bb.getFloat(0);
         }
-        return res;
+        return normalMap;
+    }
+
+    private int[] initLUT() {
+        int[] lut = new int[8900];
+        for(int i = 0; i < 8900; ++i){
+            lut[i] = AdrienColors.getRGBFromHeight(i);
+        }
+        return lut;
     }
 
     @GET
@@ -75,7 +91,7 @@ public class MapManager {
             }
         }
 
-        byte[] resHBase = hBaseDAO.getCompressedTile(x, y, 0);
+        /*byte[] resHBase = hBaseDAO.getCompressedTile(x, y, 0);
         if(resHBase.length == 0){
             result = defaultTile;
         } else {
@@ -85,26 +101,28 @@ public class MapManager {
                 LOGGER.info(e.getMessage());
                 result = defaultTile;
             }
+        }*/
+        if(y%2 == 0){
+            result = tile2;
+        } else {
+            result = tile2;
         }
-
         return Response.ok(result).build();
     }
 
     //Generate png files as byte array
-    private byte[] getFileAsByte(byte[] data) throws IOException {
+    private byte[] getFileAsByte(byte[] data, float[] normalMap) throws IOException {
         byte[] resp;
         ByteArrayOutputStream bais = new ByteArrayOutputStream();
-        ImageIO.write(colorizeMap(data), "png", bais);
+        ImageIO.write(colorizeMap(data, normalMap), "png", bais);
         bais.flush();
         resp = bais.toByteArray();
         bais.close();
         return resp;
     }
 
-    private BufferedImage colorizeMap(byte[] data){
+    private BufferedImage colorizeMap(byte[] data, float[] normalMap){
         BufferedImage bi = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_RGB);
-        int max = 0;
-        int min = 10;
         int sizeOf = 2; //size of Short
 
         for (int i = 0; i < data.length; i = i + sizeOf){
@@ -112,96 +130,27 @@ public class MapManager {
             int y = (i / sizeOf) / TILE_SIZE;
             ByteBuffer bb = getHeightFromBytes(data, sizeOf, i);
             short hauteur = bb.getShort(0);
-            // MAX
-            if(max < hauteur){
-                max = hauteur;
-            }
-            // MIN
-            if(min > hauteur){
-                min = hauteur;
-            }
             if(hauteur < 0){
                 LOGGER.info("BAD HEIGHT : " + hauteur + " | (" + x + ", " + y + ") ");
+                hauteur = 0;
             }
             //Apply coloration
-            bi.setRGB(x, y, clamp2(hauteur));
+            int rgb = LUT[hauteur];
+            double intensity = normalMap[x + y * TILE_SIZE];
+
+            if(hauteur == 0){
+                intensity = 1;
+                //LOGGER.info("intensity : " + intensity + " | (" + x + ", " + y + ") ");
+            }
+            Color c = new Color(rgb);
+            int r = (int)(Math.min(255, Math.max(0, c.getRed() * intensity)));
+            int g = (int)(Math.min(255, Math.max(0, c.getGreen() * intensity)));
+            int b = (int)(Math.min(255, Math.max(0, c.getBlue() * intensity)));
+            Color c1 = new Color(r, g, b);
+            bi.setRGB(x, y, c1.getRGB());
         }
-        LOGGER.info("Max is : " + max);
-        LOGGER.info("Min is : " + min);
         return bi;
     }
-
-    //Detect bad pixels
-
-    private int clamp3(int height){
-        if(height < 0){
-            return new Color(255, 0, 0).getRGB();
-        }
-        return new Color(0, 0, 0).getRGB();
-    }
-    //Adrien Coloration
-
-    private int clamp2(int height){
-        int waterlevelCap = 0;
-        int beachlevelCap = 15;
-        int mountainlevelCap = 80;
-        int highmountainlevelCap = 2500;
-        int snowmountainlevelCap = 5000;
-
-        int lowCap = waterlevelCap;
-        int topCap = beachlevelCap;
-        float hueBase = 240f / 360f;
-        float hueVariation = 0;
-        float satBase = 1f;
-        float satVariation = 0;
-        float lumBase = 0.2f;
-        float lumVariation = 0;
-
-        if (height > waterlevelCap && height < beachlevelCap){
-            lowCap = waterlevelCap;
-            topCap = beachlevelCap;
-            hueBase = 40f/360f;
-            satBase = 1f;
-            lumBase = 0.7f;
-            lumVariation = -0.5f;
-            hueVariation = 80f/360f;
-        } else if (height >= beachlevelCap && height < mountainlevelCap) {
-            lowCap = beachlevelCap;
-            topCap = mountainlevelCap;
-            hueBase = 120f/360f;
-            satBase = 1f;
-            lumBase = 0.2f;
-            lumVariation = 0f;
-            hueVariation = -90f/360f;
-        }else if (height >= mountainlevelCap && height < highmountainlevelCap){
-            lowCap = mountainlevelCap;
-            topCap = highmountainlevelCap;
-            hueBase = 30f/360f;
-            satBase = 1f;
-            lumBase = 0.2f;
-            lumVariation = 0.7f;
-            hueVariation = 0f;
-
-        }else if (height >= highmountainlevelCap && height < snowmountainlevelCap) {
-            lowCap = highmountainlevelCap;
-            topCap = snowmountainlevelCap;
-            lumBase = 0.9f;
-            satBase = 0f;
-            hueBase = 30f/360f;
-            lumVariation = 0.1f;
-        }
-
-        float hueRatio = 1f / (topCap - lowCap) * hueVariation;
-        float satRatio = 1f / (topCap - lowCap) * satVariation;
-        float lumRatio = 1f / (topCap - lowCap) * lumVariation;
-
-        float hue = hueBase + (height - lowCap) * hueRatio;
-        float sat = satBase + (height - lowCap) * satRatio;
-        float lum = lumBase + (height - lowCap) * lumRatio;
-
-        return Color.HSBtoRGB(hue, sat, lum);
-    }
-
 
     private ByteBuffer getHeightFromBytes(byte[] data, int sizeOf, int i) {
         ByteBuffer bb = ByteBuffer.allocate(sizeOf);

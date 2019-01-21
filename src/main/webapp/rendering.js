@@ -77,16 +77,12 @@ function height2normal(heightmap, width, height) {
             }
 
             if (y === 0) {
-
                 // top edge
-
                 s12 = heightmap[index];
                 s10 = heightmap[index + actualSize];
 
             } else if (y === height - 1) {
-
                 // bottom edge
-
                 s12 = heightmap[index - actualSize];
                 s10 = heightmap[index];
 
