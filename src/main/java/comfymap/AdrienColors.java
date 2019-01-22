@@ -75,9 +75,9 @@ public enum AdrienColors {
             }
         }
 
-        double hueRatio = 1 / (topCap - lowCap) * resultScheme.variationHue;
-        double satRatio = 1 / (topCap - lowCap) * resultScheme.variationSat;
-        double valRatio = 1 / (topCap - lowCap) * resultScheme.variationVal;
+        double hueRatio = 1f / (topCap - lowCap) * resultScheme.variationHue;
+        double satRatio = 1f / (topCap - lowCap) * resultScheme.variationSat;
+        double valRatio = 1f / (topCap - lowCap) * resultScheme.variationVal;
 
         double hue = resultScheme.initHue + (height - lowCap) * hueRatio;
         double sat = resultScheme.initSat + (height - lowCap) * satRatio;

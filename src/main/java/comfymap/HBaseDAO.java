@@ -5,6 +5,8 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -12,6 +14,7 @@ public class HBaseDAO {
 
     private static final String TABLE_NAME = "ordonez";
     private static final byte[] TILE_FAMILY = Bytes.toBytes("tile");
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseDAO.class);
 
     private Connection connection;
 
@@ -25,11 +28,12 @@ public class HBaseDAO {
         this.connection = ConnectionFactory.createConnection(conf);
     }
 
-    public byte[] getCompressedTile(int x, int y, int z) throws IOException {
+    public byte[] getCompressedTile(int x, int y, int z, String qualifier) throws IOException {
 
 
         String key = x + "-" + y + "-" + z;
-        key = String.valueOf(x * 1000 + y);
+        LOGGER.info("key is : " + key);
+        //key = String.valueOf(x * 1000 + y);
 
         Table t = this.connection.getTable(TableName.valueOf(TABLE_NAME));
         Get get = new Get(Bytes.toBytes(key));
@@ -37,6 +41,6 @@ public class HBaseDAO {
         if(result.isEmpty()){
             return new byte[0];
         }
-        return result.getValue(TILE_FAMILY, TILE_FAMILY);
+        return result.getValue(TILE_FAMILY, Bytes.toBytes(qualifier));
     }
 }
