@@ -73,7 +73,7 @@
             let f = renderPart(tile);
             let r = getRequest(
                 './comfy/map/'
-                + coords.z + '/'
+                + (7 - coords.z) + '/'
                 + coords.x + '/'
                 + coords.y,
                 //console.log
@@ -89,7 +89,7 @@
     };
 
     L.GridLayer.GridBorders = L.GridLayer.extend({
-        createTile: function (coords) {
+        /*createTile: function (coords) {
             let tile = document.createElement('canvas');
             this.options.tileSize = 1200;
             let tileSize = this.getTileSize();
@@ -131,6 +131,11 @@
 
             return f(tile);
 
+        }*/
+
+        getTileUrl: function(coords) {
+            var z = 7 - coords.z;
+            return "./comfy/map/" + z + "/" + coords.x + "/" + coords.y;
         }
     });
 

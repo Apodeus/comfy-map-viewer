@@ -23,31 +23,44 @@ function HSVtoRGB(h, s, v) {
     };
 };
 
+
+// STASHED UNTIL ZOOM-7 FIX ON LANDSCAPE NAVIGATION
 function readBytes(cbin) {
     //var bin = pako.inflate(cbin);
     //cbin = cbin.split('').map(function (e) { return e.charCodeAt(0);});
     //var inflate = new Zlib.Inflate(cbin);
     //var bin = inflate.decompress();
     let bin = cbin;
+    //return new Uint8Array(cbin);
     let byteArray = [];
-    for (let i = 0; i < bin.length; i += 2) {
+    for (let i = 0; i < bin.byteLength; i += 1) {
+        //console.log(bin[i])
         //let v = bin.charCodeAt(i + 1) + bin.charCodeAt(i);
-        let v = ((bin.charCodeAt(i) & 0xff) << 8) | (bin.charCodeAt(i + 1) & 0xff);
-        byteArray.push(v);
+        //let v =  (bin.charCodeAt(i) & 0xff);
+        byteArray.push(bin[i]);
     }
+
     return byteArray;
-};
+}
 
 function getRequest(url, callback)
 {
     var xmlHttp = new XMLHttpRequest();
+    xmlHttp.responseType = "arraybuffer";
     xmlHttp.onreadystatechange = function() { 
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-            callback(xmlHttp.responseText);
+        if (xmlHttp.readyState === 4 && xmlHttp.status === 200){
+            //var s = new Uint8Array(xmlHttp.response)
+            if (s){
+                //console.log(s);
+                callback(s);
+            }else
+                console.log("error while arraybuffer read")
+
+        }
     }
     xmlHttp.open("GET", url, true); // true for asynchronous 
     xmlHttp.send(null);
-};
+}
 
 function cross(v1, v2) {
     return {

@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 public enum AdrienColors {
+    DEEP_WATER(240f/360f, -36f/360f, 1f, -0.6f, 0.6f, 0.4f, -200),
     WATER(204f/360f, -164f/360f, 0.4f, 0.1f, 1, 0, 0),
     BEACH(40f/360f, 80f/360f, 0.5f, 0.5f, 1, -0.3f, 45),
     PLAIN(120f/360f, -90f/360f, 1, -0.5f, 0.7f, 0.1f, 400),
