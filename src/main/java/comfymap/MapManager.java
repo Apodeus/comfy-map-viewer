@@ -30,6 +30,7 @@ public class MapManager {
         //Test normal map ...
         LUT = initLUT();
         //get normal map
+
         //float[] normalMap3 = getNormalMap("266056.jojo"); // todo fix it ...
         //this.tile2 = getFileAsByte(CompressionUtil.decompress(hBaseDAO.getCompressedTile(4, 1, 12, "tile")), normalMap3);
     }
@@ -58,7 +59,7 @@ public class MapManager {
 
     @GET
     @Path("/{z}/{x}/{y}")
-    @Produces("image/png")
+    @Produces("image/bmp")
     public Response doStuff(@PathParam("x") int x, @PathParam("y") int y, @PathParam("z") int z) throws IOException, DataFormatException {
         //Select the good image to display to get the famous Sud-Ouest in the good order
         byte[] result;
@@ -83,7 +84,7 @@ public class MapManager {
     private byte[] getFileAsByte(byte[] data, float[] normalMap) throws IOException {
         byte[] resp;
         ByteArrayOutputStream bais = new ByteArrayOutputStream();
-        ImageIO.write(colorizeMap(data, normalMap), "png", bais);
+        ImageIO.write(colorizeMap(data, normalMap), "bmp", bais);
         bais.flush();
         resp = bais.toByteArray();
         bais.close();
