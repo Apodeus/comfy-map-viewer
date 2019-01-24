@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
+
+//Z = 4 => Correspond au plus grand dezoom qu'on ait Z = 4 correspond à Z = 7
+// Z = 11 => Correspond au niveau le plus zoomé Z = 11 correspond à Z = 0
 public enum AdrienColors {
     DEEP_WATER(240f/360f, -36f/360f, 1f, -0.6f, 0.6f, 0.4f, -200),
     WATER(204f/360f, -164f/360f, 0.4f, 0.1f, 1, 0, 0),
@@ -63,16 +66,17 @@ public enum AdrienColors {
     public static int getRGBFromHeight(int height){
         AdrienColors[] values = AdrienColors.values();
         //Arrays.sort(values, Comparator.comparingInt(AdrienColors::getMaxHeight));
-        AdrienColors resultScheme = WATER;
-        int lowCap = WATER.maxHeight;
-        int topCap = BEACH.maxHeight;
-
-        for(int i = 0; i < values.length - 1; ++i){
-            if(height > values[i].maxHeight && height <= values[i+1].maxHeight){
-                resultScheme = values[i+1];
-                lowCap = values[i].maxHeight;
-                topCap = values[i+1].maxHeight;
-                break;
+        AdrienColors resultScheme = DEEP_WATER;
+        int lowCap = DEEP_WATER.maxHeight; // -200
+        int topCap = WATER.maxHeight; // 0
+        if(height > 0) {
+            for (int i = 0; i < values.length - 1; ++i) {
+                if (height > values[i].maxHeight && height <= values[i + 1].maxHeight) {
+                    resultScheme = values[i + 1];
+                    lowCap = values[i].maxHeight;
+                    topCap = values[i + 1].maxHeight;
+                    break;
+                }
             }
         }
 
