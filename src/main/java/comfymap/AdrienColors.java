@@ -6,13 +6,13 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 
-//Z = 4 => Correspond au plus grand dezoom qu'on ait Z = 4 correspond à Z = 7
+//Z = 3 => Correspond au plus grand dezoom qu'on ait Z = 3 correspond à Z = 8
 // Z = 11 => Correspond au niveau le plus zoomé Z = 11 correspond à Z = 0
 public enum AdrienColors {
-    DEEP_WATER(240f/360f, -36f/360f, 1f, -0.6f, 0.6f, 0.4f, -200),
+    DEEP_WATER(240f/360f, -36f/360f, 1f, -0.6f, 0.6f, 0.4f, -195),
     WATER(204f/360f, -164f/360f, 0.4f, 0.1f, 1, 0, 0),
-    BEACH(40f/360f, 80f/360f, 0.5f, 0.5f, 1, -0.3f, 45),
-    PLAIN(120f/360f, -90f/360f, 1, -0.5f, 0.7f, 0.1f, 400),
+    BEACH(40f/360f, 80f/360f, 0.5f, 0.5f, 1, -0.6f, 45),
+    PLAIN(120f/360f, -90f/360f, 1, -0.5f, 0.4f, 0.4f, 400),
     LOW_MOUNTAIN(30f/360f, 0, 0.5f, 0.5f, 0.8f, -0.4f, 800),
     MOUNTAIN(30f/360f, 0, 1, -0.2f, 0.4f, 0.5f, 2000),
     HIGH_MOUNTAIN(30f/360f, 0, 0, 0, 0.9f, 0.1f, 8900);
@@ -65,7 +65,6 @@ public enum AdrienColors {
 
     public static int getRGBFromHeight(int height){
         AdrienColors[] values = AdrienColors.values();
-        //Arrays.sort(values, Comparator.comparingInt(AdrienColors::getMaxHeight));
         AdrienColors resultScheme = DEEP_WATER;
         int lowCap = DEEP_WATER.maxHeight; // -200
         int topCap = WATER.maxHeight; // 0
@@ -88,30 +87,6 @@ public enum AdrienColors {
         double sat = resultScheme.initSat + (height - lowCap) * satRatio;
         double val = resultScheme.initVal + (height - lowCap) * valRatio;
 
-        //return HSVtoRGB(hue, sat, val);
         return Color.HSBtoRGB((float)hue, (float)sat, (float)val);
-    }
-
-    private static int HSVtoRGB(double hue, double sat, double val){
-        int i = (int)Math.floor(hue  * 6);
-        double f = hue * 6 - 1;
-        double p = val * (1 - sat);
-        double q = val * (1 - f * sat);
-        double t = val * (1 - (1 - f) * sat);
-        double r, g, b;
-        switch(i % 6){
-            case 0: r = val; g = t;   b = p; break;
-            case 1: r = q;   g = val; b = p; break;
-            case 2: r = p;   g = val; b = t; break;
-            case 3: r = p;   g = q;   b = val; break;
-            case 4: r = t;   g = p;   b = val; break;
-            case 5: r = val; g = p;   b = q; break;
-            default: r = val; g = t; b = p; break;
-        }
-
-        int red =   (int)Math.min(255,   Math.max(Math.round(r * 255), 0));
-        int green = (int)Math.min(255,   Math.max(Math.round(g * 255), 0));
-        int blue =  (int)Math.min(255,   Math.max(Math.round(b * 255), 0));
-        return new Color(red, green, blue).getRGB();
     }
 }

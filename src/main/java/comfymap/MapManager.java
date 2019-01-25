@@ -1,5 +1,6 @@
 package comfymap;
 
+import exception.TileNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,7 @@ import javax.ws.rs.core.Response;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.zip.DataFormatException;
@@ -20,52 +22,34 @@ public class MapManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MapManager.class);
     private static final int TILE_SIZE = 1201;
+    public static final int MAX_ZOOM_LEAFLET = 11;
+    private final float[] fakeNormalMap;
     private HBaseDAO hBaseDAO;
     private final int[] LUT;
     private final byte[] waterImg;
     private final int shiftHeight; // to negative values for the lut
 
-    //private final HBaseDAO hBaseDAO;
-
-    public MapManager() throws IOException, DataFormatException {
+    public MapManager() throws IOException {
+        /// ---- NEW
+        this.shiftHeight = Math.abs(AdrienColors.values()[0].getMaxHeight());
         this.hBaseDAO = new HBaseDAO();
 
-        //Test normal map ...
-        LUT = initLUT();
-        byte[] tmpWater = new byte[2 * TILE_SIZE * TILE_SIZE];
-        Arrays.fill(tmpWater, (byte)0);
-        for(int i = 1; i < tmpWater.length; i=i+2){
-            tmpWater[i] = (byte) 200;
-        }
+        this.LUT = initLUT();
 
-        float[] tmpNormal = new float[TILE_SIZE * TILE_SIZE];
-        Arrays.fill(tmpNormal, 1f);
-        waterImg = getFileAsByte(tmpWater, tmpNormal);
+        this.fakeNormalMap = new float[TILE_SIZE * TILE_SIZE];
+        Arrays.fill(fakeNormalMap, 1f);
 
-        this.shiftHeight = AdrienColors.values()[0].getMaxHeight();
-        //get normal map
+        short[] tmpWater = new short[TILE_SIZE * TILE_SIZE];
+        Arrays.fill(tmpWater, (short)0);
 
-        //float[] normalMap3 = getNormalMap("266056.jojo"); // todo fix it ...
-        //this.tile2 = getFileAsByte(CompressionUtil.decompress(hBaseDAO.getCompressedTile(4, 1, 12, "tile")), normalMap3);
-    }
-
-    private float[] getNormalMap(int x, int y, int z) throws IOException, DataFormatException {
-        float[] normalMap = new float[TILE_SIZE * TILE_SIZE];
-        byte[] phongs = hBaseDAO.getCompressedTile(x, y, z, "phong");
-        byte[] tmpNorm = CompressionUtil.decompress(phongs);
-        for(int i = 0; i < TILE_SIZE * TILE_SIZE; ++i){
-            ByteBuffer bb = ByteBuffer.allocate(4);
-            for(int j = i * 4; j < i*4 + 4; ++j){
-                bb.put(tmpNorm[j]);
-            }
-            normalMap[i] = bb.getFloat(0);
-        }
-        return normalMap;
+        this.waterImg = writeAsImage(colorize(tmpWater));
     }
 
     private int[] initLUT() {
-        int[] lut = new int[9400];
-        int minMaxHeight = AdrienColors.values()[0].getMaxHeight();
+        AdrienColors[] values = AdrienColors.values();
+        int minMaxHeight = values[0].getMaxHeight();
+        int maxHeight = values[values.length - 1].getMaxHeight();
+        int[] lut = new int[Math.abs(minMaxHeight) + maxHeight + 1];
         for(int i = 0; i < lut.length; ++i){
             lut[i] = AdrienColors.getRGBFromHeight(minMaxHeight + i);
         }
@@ -75,15 +59,25 @@ public class MapManager {
     @GET
     @Path("/map/{z}/{x}/{y}")
     @Produces("image/png")
-    public Response doStuff(@PathParam("x") int x, @PathParam("y") int y, @PathParam("z") int z) throws IOException, DataFormatException {
-        z = 11 - z;
-        byte[] tile = hBaseDAO.getCompressedTile(x, y, z, "tile");
-        if(tile.length == 0){
-            return Response.ok(waterImg).build();
-        }
-        float[] normalMap = getNormalMap(x, y, z);
-        byte[] result = getFileAsByte(CompressionUtil.decompress(tile), normalMap);
-        return Response.ok(result).build();
+    public Response getImageTile(@PathParam("x") int x, @PathParam("y") int y, @PathParam("z") int z) throws IOException, DataFormatException {
+        z = MAX_ZOOM_LEAFLET - z; // Conversion of requested Zoom level to our Zoom level system
+        return Response.ok(composeImage(x, y, z)).build();
+    }
+
+    @GET
+    @Path("/oldMap/{z}/{x}/{y}")
+    @Produces("image/png")
+    public Response getOldImageTile(@PathParam("x") int x, @PathParam("y") int y, @PathParam("z") int z) throws IOException, DataFormatException {
+        z = MAX_ZOOM_LEAFLET - z; // Conversion of requested Zoom level to our Zoom level system
+        return Response.ok(composeOldImage(x, y, z)).build();
+    }
+
+    @GET
+    @Path("/toto")
+    public Response getAsBinary() throws IOException, DataFormatException, TileNotFoundException {
+        byte[] tile = hBaseDAO.getCompressedBytes(1, 0, 7, "tile");
+        byte[] decompressedTile = CompressionUtil.decompress(tile);
+        return Response.ok(decompressedTile).build();
     }
 
     @GET
@@ -96,58 +90,99 @@ public class MapManager {
         for(int i = 0; i < lut.length; ++i){
             bi.setRGB(i, 0, lut[i]);
         }
+        return Response.ok(writeAsImage(bi)).build();
+    }
+
+    private byte[] composeImage(int x, int y, int z) throws IOException, DataFormatException {
+        byte[] heightMapAsByte;
+        byte[] normalMapAsByte;
+        try {
+            heightMapAsByte = getDecompressedDatas(x, y, z, "tile");
+            normalMapAsByte = getDecompressedDatas(x, y, z, "phong");
+        } catch (TileNotFoundException e) {
+            return waterImg;
+        }
+        short[] heightMap = getHeightMap(heightMapAsByte);
+        float[] normalMap = getNormalMap(normalMapAsByte);
+        return writeAsImage(colorize(heightMap, normalMap));
+    }
+
+    private byte[] composeOldImage(int x, int y, int z) throws IOException, DataFormatException {
+        byte[] heightMapAsByte;
+        try {
+            heightMapAsByte = getDecompressedDatas(x, y, z, "tile");
+        } catch (TileNotFoundException e) {
+            return waterImg;
+        }
+        short[] heightMap = getHeightMap(heightMapAsByte);
+        return writeAsImage(colorize(heightMap));
+    }
+
+    private byte[] getDecompressedDatas(int x, int y, int z, String qualifier) throws IOException, DataFormatException, TileNotFoundException {
+        byte[] compressedBytes = hBaseDAO.getCompressedBytes(x, y, z, qualifier);
+        return CompressionUtil.decompress(compressedBytes);
+    }
+
+    private float[] getNormalMap(byte[] data){
+        float[] normalMap = new float[TILE_SIZE * TILE_SIZE];
+        for(int i = 0; i < normalMap.length; ++i){
+            float factor = getValueFromBytes(data, 4, i).getFloat(0);
+            normalMap[i] = factor;
+        }
+        return normalMap;
+    }
+
+    private short[] getHeightMap(byte[] data){
+        short[] heightMap = new short[TILE_SIZE * TILE_SIZE];
+        for(int i = 0; i < heightMap.length; ++i){
+            short height = getValueFromBytes(data, 2, i).getShort(0);
+            heightMap[i] = height;
+        }
+        return heightMap;
+    }
+
+    private ByteBuffer getValueFromBytes(byte[] array, int sizeOf, int index){
+        ByteBuffer bb = ByteBuffer.allocate(sizeOf);
+        for(int j = index * sizeOf; j < index*sizeOf + sizeOf; ++j){
+            bb.put(array[j]);
+        }
+        return bb;
+    }
+
+    private byte[] writeAsImage(BufferedImage bi) throws IOException {
         ByteArrayOutputStream bais = new ByteArrayOutputStream();
         ImageIO.write(bi, "png", bais);
         bais.flush();
-        byte[] lutRes = bais.toByteArray();
+        byte[] image = bais.toByteArray();
         bais.close();
-        return Response.ok(lutRes).build();
+        return image;
     }
 
-    //Generate png files as byte array
-    private byte[] getFileAsByte(byte[] data, float[] normalMap) throws IOException {
-        byte[] resp;
-        ByteArrayOutputStream bais = new ByteArrayOutputStream();
-        ImageIO.write(colorizeMap(data, normalMap), "png", bais);
-        bais.flush();
-        resp = bais.toByteArray();
-        bais.close();
-        return resp;
-    }
-
-    private BufferedImage colorizeMap(byte[] data, float[] normalMap){
-        BufferedImage bi = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_RGB);
-        int sizeOf = 2; //size of Short
-
-        for (int i = 0; i < data.length; i = i + sizeOf){
-            int x = (i / sizeOf) % TILE_SIZE;
-            int y = (i / sizeOf) / TILE_SIZE;
-            ByteBuffer bb = getHeightFromBytes(data, sizeOf, i);
-            short hauteur = (short)(bb.getShort(0) - shiftHeight);
-            //LOGGER.info("hauteur : " + hauteur);
-            //Apply coloration
-            int rgb = LUT[hauteur];
-            double intensity = normalMap[x + y * TILE_SIZE];
-
-            if(hauteur <= 200){
-                intensity = 1;
+    private BufferedImage colorize(short[] heightMap, float[] normalMap){
+        BufferedImage bufferedImage = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_RGB);
+        for(int y = 0; y < TILE_SIZE; ++y){
+            int col = y * TILE_SIZE;
+            for(int x = 0; x < TILE_SIZE; ++x){
+                int index = x + col;
+                short height = heightMap[index];
+                short height4Lut = (short)(height + shiftHeight);
+                int rgb = this.LUT[height4Lut];
+                double intensity = normalMap[index];
+                if(height == 0){
+                    intensity = 1;
+                }
+                Color lutColor = new Color(rgb);
+                int r = (int)(Math.min(255, Math.max(0, lutColor.getRed() * intensity)));
+                int g = (int)(Math.min(255, Math.max(0, lutColor.getGreen() * intensity)));
+                int b = (int)(Math.min(255, Math.max(0, lutColor.getBlue() * intensity)));
+                Color colorWithNormal = new Color(r, g, b);
+                bufferedImage.setRGB(x, y, colorWithNormal.getRGB());
             }
-
-            Color c = new Color(rgb);
-            int r = (int)(Math.min(255, Math.max(0, c.getRed() * intensity)));
-            int g = (int)(Math.min(255, Math.max(0, c.getGreen() * intensity)));
-            int b = (int)(Math.min(255, Math.max(0, c.getBlue() * intensity)));
-            Color c1 = new Color(r, g, b);
-            bi.setRGB(x, y, c1.getRGB());
         }
-        return bi;
+        return bufferedImage;
     }
 
-    private ByteBuffer getHeightFromBytes(byte[] data, int sizeOf, int i) {
-        ByteBuffer bb = ByteBuffer.allocate(sizeOf);
-        for(int j = 0; j < sizeOf; ++j){
-            bb.put(data[i + j]);
-        }
-        return bb;
+    private BufferedImage colorize(short[] heightMap){
+        return colorize(heightMap, fakeNormalMap);
     }
 }
